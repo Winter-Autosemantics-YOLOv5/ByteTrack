@@ -1,0 +1,3 @@
+[submodule "deep-person-reid"]
+	path = deep-person-reid
+	url = https://github.com/Winter-Autosemantics-YOLOv5/deep-person-reid.git

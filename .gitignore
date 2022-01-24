@@ -139,3 +139,8 @@ docs/api
 events.out.tfevents*
 pretrained
 YOLOX_outputs
+
+# dataset
+datasets/
+videos/*.mp4
+!vidoes/palace.mp4

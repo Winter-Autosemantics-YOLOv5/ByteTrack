@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 from .kalman_filter import KalmanFilter
 from yolox.tracker import matching
+from .feature_extracker import Extractor
 from .basetrack import BaseTrack, TrackState
 
 class STrack(BaseTrack):
@@ -143,7 +144,7 @@ class STrack(BaseTrack):
 
 
 class BYTETracker(object):
-    def __init__(self, args, frame_rate=30):
+    def __init__(self, args, reid, frame_rate=30):
         self.tracked_stracks = []  # type: list[STrack]
         self.lost_stracks = []  # type: list[STrack]
         self.removed_stracks = []  # type: list[STrack]
@@ -155,6 +156,8 @@ class BYTETracker(object):
         self.buffer_size = int(frame_rate / 30.0 * args.track_buffer)
         self.max_time_lost = self.buffer_size
         self.kalman_filter = KalmanFilter()
+
+        self.extractor = Extractor(reid)
 
     def update(self, output_results, img_info, img_size):
         self.frame_id += 1
@@ -218,6 +221,8 @@ class BYTETracker(object):
             else:
                 track.re_activate(det, self.frame_id, new_id=False)
                 refind_stracks.append(track)
+
+        ''' Step 2: First association, with reid & high score detection boxes '''
 
         ''' Step 3: Second association, with low score detection boxes'''
         # association the untrack to the low score detections

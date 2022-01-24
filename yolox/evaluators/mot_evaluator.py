@@ -79,6 +79,7 @@ class MOTEvaluator:
     def evaluate(
         self,
         model,
+        reid,
         distributed=False,
         half=False,
         trt_file=None,
@@ -125,7 +126,7 @@ class MOTEvaluator:
             model(x)
             model = model_trt
             
-        tracker = BYTETracker(self.args)
+        tracker = BYTETracker(self.args, reid)
         ori_thresh = self.args.track_thresh
         for cur_iter, (imgs, _, info_imgs, ids) in enumerate(
             progress_bar(self.dataloader)

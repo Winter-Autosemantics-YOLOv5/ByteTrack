@@ -14,15 +14,17 @@ from yolox.utils.visualize import plot_tracking
 from yolox.tracker.byte_tracker import BYTETracker
 from yolox.tracking_utils.timer import Timer
 
+import sys
+sys.path.append('deep-person-reid')
+from torchreid import models
+from torchreid import utils
 
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
 
 def make_parser():
     parser = argparse.ArgumentParser("ByteTrack Demo!")
-    parser.add_argument(
-        "demo", default="image", help="demo type, eg. image, video and webcam"
-    )
+    parser.add_argument("demo", default="image", help="demo type, eg. image, video and webcam")
     parser.add_argument("-expn", "--experiment-name", type=str, default=None)
     parser.add_argument("-n", "--name", type=str, default=None, help="model name")
 
@@ -31,52 +33,20 @@ def make_parser():
         "--path", default="./videos/palace.mp4", help="path to images or video"
     )
     parser.add_argument("--camid", type=int, default=0, help="webcam demo camera id")
-    parser.add_argument(
-        "--save_result",
-        action="store_true",
-        help="whether to save the inference result of image/video",
-    )
+    parser.add_argument("--save_result", action="store_true", help="whether to save the inference result of image/video",)
 
     # exp file
-    parser.add_argument(
-        "-f",
-        "--exp_file",
-        default=None,
-        type=str,
-        help="pls input your expriment description file",
-    )
+    parser.add_argument("-f", "--exp_file", default=None, type=str, help="pls input your expriment description file",)
     parser.add_argument("-c", "--ckpt", default=None, type=str, help="ckpt for eval")
-    parser.add_argument(
-        "--device",
-        default="gpu",
-        type=str,
-        help="device to run our model, can either be cpu or gpu",
-    )
+    parser.add_argument("--device", default="gpu", type=str, help="device to run our model, can either be cpu or gpu",)
     parser.add_argument("--conf", default=None, type=float, help="test conf")
     parser.add_argument("--nms", default=None, type=float, help="test nms threshold")
     parser.add_argument("--tsize", default=None, type=int, help="test img size")
     parser.add_argument("--fps", default=30, type=int, help="frame rate (fps)")
-    parser.add_argument(
-        "--fp16",
-        dest="fp16",
-        default=False,
-        action="store_true",
-        help="Adopting mix precision evaluating.",
-    )
-    parser.add_argument(
-        "--fuse",
-        dest="fuse",
-        default=False,
-        action="store_true",
-        help="Fuse conv and bn for testing.",
-    )
-    parser.add_argument(
-        "--trt",
-        dest="trt",
-        default=False,
-        action="store_true",
-        help="Using TensorRT model for testing.",
-    )
+    parser.add_argument("--fp16", dest="fp16", default=False, action="store_true", help="Adopting mix precision evaluating.",)
+    parser.add_argument("--fuse", dest="fuse", default=False, action="store_true", help="Fuse conv and bn for testing.",)
+    parser.add_argument("--trt", dest="trt", default=False, action="store_true", help="Using TensorRT model for testing.",)
+
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
     parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
@@ -87,6 +57,11 @@ def make_parser():
     )
     parser.add_argument('--min_box_area', type=float, default=10, help='filter out tiny boxes')
     parser.add_argument("--mot20", dest="mot20", default=False, action="store_true", help="test mot20.")
+
+    # deepsort args
+    parser.add_argument("--deepsort_model", type=str, default="osnet_x_25", help="deepsort model")
+    parser.add_argument("--deepsort_ckpt", type=str, default=None, help="deepsort finetuned checkpoint")
+
     return parser
 
 
@@ -175,13 +150,13 @@ class Predictor(object):
         return outputs, img_info
 
 
-def image_demo(predictor, vis_folder, current_time, args):
+def image_demo(predictor, reid, vis_folder, current_time, args):
     if osp.isdir(args.path):
         files = get_image_list(args.path)
     else:
         files = [args.path]
     files.sort()
-    tracker = BYTETracker(args, frame_rate=args.fps)
+    tracker = BYTETracker(args, reid, frame_rate=args.fps)
     timer = Timer()
     results = []
 
@@ -233,7 +208,7 @@ def image_demo(predictor, vis_folder, current_time, args):
         logger.info(f"save results to {res_file}")
 
 
-def imageflow_demo(predictor, vis_folder, current_time, args):
+def imageflow_demo(predictor, reid, vis_folder, current_time, args):
     cap = cv2.VideoCapture(args.path if args.demo == "video" else args.camid)
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
@@ -249,7 +224,7 @@ def imageflow_demo(predictor, vis_folder, current_time, args):
     vid_writer = cv2.VideoWriter(
         save_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
     )
-    tracker = BYTETracker(args, frame_rate=30)
+    tracker = BYTETracker(args, reid, frame_rate=30)
     timer = Timer()
     frame_id = 0
     results = []
@@ -322,9 +297,18 @@ def main(exp, args):
     if args.tsize is not None:
         exp.test_size = (args.tsize, args.tsize)
 
+    # detector model load
     model = exp.get_model().to(args.device)
     logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
     model.eval()
+
+    # reid model load
+    reid = models.build_model(name=args.deepsort_model, num_classes=1000)
+    if args.deepsort_ckpt : 
+        utils.load_pretrained_weights(reid, args.model_path)
+    logger.info("Re-ID Model Summary: {}".format(get_model_info(reid)))
+    reid.to(args.device)
+    reid.eval()
 
     if not args.trt:
         if args.ckpt is None:
@@ -360,9 +344,9 @@ def main(exp, args):
     predictor = Predictor(model, exp, trt_file, decoder, args.device, args.fp16)
     current_time = time.localtime()
     if args.demo == "image":
-        image_demo(predictor, vis_folder, current_time, args)
+        image_demo(predictor, reid, vis_folder, current_time, args)
     elif args.demo == "video" or args.demo == "webcam":
-        imageflow_demo(predictor, vis_folder, current_time, args)
+        imageflow_demo(predictor, reid, vis_folder, current_time, args)
 
 
 if __name__ == "__main__":
