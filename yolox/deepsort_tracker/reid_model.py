@@ -118,7 +118,6 @@ class Extractor(object):
           state_dict = torch.load(model_path, map_location=torch.device(self.device))[
             'net_dict']
           self.net.load_state_dict(state_dict)
-          self.net.to(self.device)
           
         else:
           self.net = models.build_model(name=model_name, num_classes=1000)
@@ -127,6 +126,8 @@ class Extractor(object):
           except:
             # only use imagenet pretrained ckpt
             pass
+        
+        self.net.to(self.device)
         
         logger = logging.getLogger("root.tracker")
         logger.info("Loading weights from {}... Done!".format(model_path))
