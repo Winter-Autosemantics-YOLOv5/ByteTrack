@@ -411,7 +411,7 @@ class MOTEvaluator:
                 if video_name not in video_names:
                     video_names[video_id] = video_name
                 if frame_id == 1:
-                    tracker = DeepSort(model_folder, min_confidence=self.args.track_thresh)
+                    tracker = DeepSort(model_name, model_folder, min_confidence=self.args.track_thresh)
                     if len(results) != 0:
                         result_filename = os.path.join(result_folder, '{}.txt'.format(video_names[video_id - 1]))
                         write_results_no_score(result_filename, results)

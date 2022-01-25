@@ -113,22 +113,24 @@ class Extractor(object):
     def __init__(self, model_name, model_path, use_cuda=True):
         self.device = "cuda" if torch.cuda.is_available() and use_cuda else "cpu"
 
-        if model_name == "Net":
-            self.net = Net(reid=True)
-            state_dict = torch.load(model_path, map_location=torch.device(self.device))[
+        if model_name == 'Net':
+          self.net = Net(reid=True)
+          state_dict = torch.load(model_path, map_location=torch.device(self.device))[
             'net_dict']
-            self.net.load_state_dict(state_dict)
+          self.net.load_state_dict(state_dict)
+          self.net.to(self.device)
+          
         else:
-            self.net = models.build_model(name=model_name, num_classes=1000)
-            try:
-                utils.load_pretrained_weights(self.net, model_path)
-            except:
-                # only use imagenet pretrained ckpt
-                pass
-
+          self.net = models.build_model(name=model_name, num_classes=1000)
+          try:
+            utils.load_pretrained_weights(self.net, model_path)
+          except:
+            # only use imagenet pretrained ckpt
+            pass
+        
         logger = logging.getLogger("root.tracker")
         logger.info("Loading weights from {}... Done!".format(model_path))
-        self.net.to(self.device)
+        
         self.size = (64, 128)
         self.norm = transforms.Compose([
             transforms.ToTensor(),
