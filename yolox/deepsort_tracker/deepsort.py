@@ -153,11 +153,11 @@ class NearestNeighborDistanceMetric(object):
 
 
 class DeepSort(object):
-    def __init__(self, model_path, max_dist=0.1, min_confidence=0.3, nms_max_overlap=1.0, max_iou_distance=0.7, max_age=30, n_init=3, nn_budget=100, use_cuda=True):
+    def __init__(self, model_name, model_path, max_dist=0.1, min_confidence=0.3, nms_max_overlap=1.0, max_iou_distance=0.7, max_age=30, n_init=3, nn_budget=100, use_cuda=True):
         self.min_confidence = min_confidence
         self.nms_max_overlap = nms_max_overlap
 
-        self.extractor = Extractor(model_path, use_cuda=use_cuda)
+        self.extractor = Extractor(model_name, model_path, use_cuda=use_cuda)
 
         max_cosine_distance = max_dist
         metric = NearestNeighborDistanceMetric(

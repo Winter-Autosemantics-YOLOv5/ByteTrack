@@ -107,6 +107,8 @@ def make_parser():
     parser.add_argument("--match_thresh", type=float, default=0.9, help="matching threshold for tracking")
     parser.add_argument('--min-box-area', type=float, default=100, help='filter out tiny boxes')
     # deepsort args
+    
+    parser.add_argument("--model_name", type=str, default='Net', help="reid model name")
     parser.add_argument("--model_folder", type=str, default='pretrained/ckpt.t7', help="reid model folder")
     return parser
 
@@ -150,8 +152,8 @@ def main(exp, args, num_gpu):
 
     results_folder = os.path.join(file_name, "track_results_deepsort")
     os.makedirs(results_folder, exist_ok=True)
-    model_folder = args.model_folder
-
+    model_name, model_folder = args.model_name, args.model_folder
+    
     setup_logger(file_name, distributed_rank=rank, filename="val_log.txt", mode="a")
     logger.info("Args: {}".format(args))
 
@@ -217,7 +219,7 @@ def main(exp, args, num_gpu):
 
     # start evaluate
     *_, summary = evaluator.evaluate_deepsort(
-        model, is_distributed, args.fp16, trt_file, decoder, exp.test_size, results_folder, model_folder
+        model, is_distributed, args.fp16, trt_file, decoder, exp.test_size, results_folder, model_name, model_folder
     )
     logger.info("\n" + summary)
 

@@ -12,13 +12,8 @@ from yolox.exp import get_exp
 from yolox.utils import fuse_model, get_model_info, postprocess
 from yolox.utils.visualize import plot_tracking
 from yolox.tracker.byte_tracker import BYTETracker
-from yolox.deepsort_tracker.deepsort import DeepSort
+#from yolox.deepsort_tracker.deepsort import DeepSort
 from yolox.tracking_utils.timer import Timer
-
-import sys
-sys.path.append('deep-person-reid')
-from torchreid import models
-from torchreid import utils
 
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
@@ -61,7 +56,7 @@ def make_parser():
 
     # deepsort args
     parser.add_argument("--deepsort_model", type=str, default="osnet_x0_25", help="deepsort model")
-    parser.add_argument("--deepsort_ckpt", type=str, default=None, help="deepsort finetuned checkpoint")
+    parser.add_argument("--deepsort_path", type=str, default=None, help="deepsort finetuned checkpoint")
 
     return parser
 
@@ -151,13 +146,13 @@ class Predictor(object):
         return outputs, img_info
 
 
-def image_demo(predictor, reid, vis_folder, current_time, args):
+def image_demo(predictor, vis_folder, current_time, args):
     if osp.isdir(args.path):
         files = get_image_list(args.path)
     else:
         files = [args.path]
     files.sort()
-    tracker = BYTETracker(args, reid, frame_rate=args.fps)
+    tracker = BYTETracker(args, frame_rate=args.fps)
     timer = Timer()
     results = []
 
@@ -209,7 +204,7 @@ def image_demo(predictor, reid, vis_folder, current_time, args):
         logger.info(f"save results to {res_file}")
 
 
-def imageflow_demo(predictor, reid, vis_folder, current_time, args):
+def imageflow_demo(predictor, vis_folder, current_time, args):
     cap = cv2.VideoCapture(args.path if args.demo == "video" else args.camid)
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
@@ -225,7 +220,7 @@ def imageflow_demo(predictor, reid, vis_folder, current_time, args):
     vid_writer = cv2.VideoWriter(
         save_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
     )
-    tracker = BYTETracker(args, reid, frame_rate=30)
+    tracker = BYTETracker(args, frame_rate=30)
     timer = Timer()
     frame_id = 0
     results = []
@@ -303,13 +298,6 @@ def main(exp, args):
     logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
     model.eval()
 
-    # reid model load
-    reid = models.build_model(name=args.deepsort_model, num_classes=1000)
-    if args.deepsort_ckpt : 
-        utils.load_pretrained_weights(reid, args.model_path)
-    reid.to(args.device)
-    reid.eval()
-
     if not args.trt:
         if args.ckpt is None:
             ckpt_file = osp.join(output_dir, "best_ckpt.pth.tar")
@@ -344,9 +332,9 @@ def main(exp, args):
     predictor = Predictor(model, exp, trt_file, decoder, args.device, args.fp16)
     current_time = time.localtime()
     if args.demo == "image":
-        image_demo(predictor, reid, vis_folder, current_time, args)
+        image_demo(predictor, vis_folder, current_time, args)
     elif args.demo == "video" or args.demo == "webcam":
-        imageflow_demo(predictor, reid, vis_folder, current_time, args)
+        imageflow_demo(predictor, vis_folder, current_time, args)
 
 
 if __name__ == "__main__":

@@ -18,10 +18,6 @@ import motmetrics as mm
 from collections import OrderedDict
 from pathlib import Path
 
-import sys
-sys.path.append('deep-person-reid')
-from torchreid import models
-from torchreid import utils
 
 def make_parser():
     parser = argparse.ArgumentParser("YOLOX Eval")
@@ -121,13 +117,6 @@ def main(exp, args, num_gpu):
     logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
     #logger.info("Model Structure:\n{}".format(str(model)))
 
-    # reid model load
-    reid = models.build_model(name=args.deepsort_model, num_classes=1000)
-    #logger.info("Re-ID Model Structure:\n{}".format(str(reid)))
-
-    if args.deepsort_ckpt :
-        utils.load_pretrained_weights(reid, args.model_path)
-
     val_loader = exp.get_eval_loader(args.batch_size, is_distributed, args.test)
     evaluator = MOTEvaluator(
         args=args,
@@ -141,9 +130,6 @@ def main(exp, args, num_gpu):
     torch.cuda.set_device(rank)
     model.cuda(rank)
     model.eval()
-
-    reid.cuda(rank)
-    reid.eval()
 
     if not args.speed and not args.trt:
         if args.ckpt is None:
@@ -180,7 +166,7 @@ def main(exp, args, num_gpu):
 
     # start evaluate
     *_, summary = evaluator.evaluate(
-        model, reid, is_distributed, args.fp16, trt_file, decoder, exp.test_size, results_folder
+        model, is_distributed, args.fp16, trt_file, decoder, exp.test_size, results_folder
     )
     logger.info("\n" + summary)
 

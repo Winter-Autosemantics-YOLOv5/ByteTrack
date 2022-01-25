@@ -79,7 +79,6 @@ class MOTEvaluator:
     def evaluate(
         self,
         model,
-        reid,
         distributed=False,
         half=False,
         trt_file=None,
@@ -126,7 +125,7 @@ class MOTEvaluator:
             model(x)
             model = model_trt
             
-        tracker = BYTETracker(self.args, reid)
+        tracker = BYTETracker(self.args)
         ori_thresh = self.args.track_thresh
         for cur_iter, (imgs, _, info_imgs, ids) in enumerate(
             progress_bar(self.dataloader)
@@ -355,6 +354,7 @@ class MOTEvaluator:
         decoder=None,
         test_size=None,
         result_folder=None,
+        model_name=None,
         model_folder=None
     ):
         """
@@ -396,7 +396,7 @@ class MOTEvaluator:
             model(x)
             model = model_trt
             
-        tracker = DeepSort(model_folder, min_confidence=self.args.track_thresh)
+        tracker = DeepSort(model_name, model_folder, min_confidence=self.args.track_thresh)
         
         for cur_iter, (imgs, _, info_imgs, ids) in enumerate(
             progress_bar(self.dataloader)

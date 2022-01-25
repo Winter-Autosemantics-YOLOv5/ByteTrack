@@ -6,6 +6,10 @@ import cv2
 import logging
 import torchvision.transforms as transforms
 
+import sys
+sys.path.append('deep-person-reid')
+from torchreid import models
+from torchreid import utils
 
 class BasicBlock(nn.Module):
     def __init__(self, c_in, c_out, is_downsample=False):
@@ -106,12 +110,22 @@ class Net(nn.Module):
 
 
 class Extractor(object):
-    def __init__(self, model_path, use_cuda=True):
-        self.net = Net(reid=True)
+    def __init__(self, model_name, model_path, use_cuda=True):
         self.device = "cuda" if torch.cuda.is_available() and use_cuda else "cpu"
-        state_dict = torch.load(model_path, map_location=torch.device(self.device))[
+
+        if model_name == "Net":
+            self.net = Net(reid=True)
+            state_dict = torch.load(model_path, map_location=torch.device(self.device))[
             'net_dict']
-        self.net.load_state_dict(state_dict)
+            self.net.load_state_dict(state_dict)
+        else:
+            self.net = models.build_model(name=model_name, num_classes=1000)
+            try:
+                utils.load_pretrained_weights(self.net, model_path)
+            except:
+                # only use imagenet pretrained ckpt
+                pass
+
         logger = logging.getLogger("root.tracker")
         logger.info("Loading weights from {}... Done!".format(model_path))
         self.net.to(self.device)
