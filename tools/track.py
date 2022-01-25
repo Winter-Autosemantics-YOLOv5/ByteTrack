@@ -60,9 +60,9 @@ def make_parser():
     parser.add_argument("--mot20", dest="mot20", default=False, action="store_true", help="test mot20.")
 
     # deepsort args
-    parser.add_argument("--deepsort_model", type=str, default="osnet_x_25", help="deepsort model")
+    parser.add_argument("--deepsort_model", type=str, default="osnet_x0_25", help="deepsort model")
     parser.add_argument("--deepsort_ckpt", type=str, default=None, help="deepsort finetuned checkpoint")
-
+    
     return parser
 
 
@@ -123,7 +123,6 @@ def main(exp, args, num_gpu):
 
     # reid model load
     reid = models.build_model(name=args.deepsort_model, num_classes=1000)
-    logger.info("Re-ID Model Summary: {}".format(get_model_info(reid)))
     #logger.info("Re-ID Model Structure:\n{}".format(str(reid)))
 
     if args.deepsort_ckpt :

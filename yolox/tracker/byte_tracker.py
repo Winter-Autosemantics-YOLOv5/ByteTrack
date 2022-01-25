@@ -9,7 +9,9 @@ import torch.nn.functional as F
 from .kalman_filter import KalmanFilter
 from yolox.tracker import matching
 from .feature_extracker import Extractor
+from .deep_tracker import NearestNeighborDistanceMetric, Tracker
 from .basetrack import BaseTrack, TrackState
+
 
 class STrack(BaseTrack):
     shared_kalman = KalmanFilter()
@@ -157,7 +159,22 @@ class BYTETracker(object):
         self.max_time_lost = self.buffer_size
         self.kalman_filter = KalmanFilter()
 
+        # deepsort instances
+        self.max_dist=0.1
+        self.min_confidence=args.track_thresh
+        self.nms_max_overlap=1.0
+        self.max_iou_distance=0.7
+        self.max_age=args.track_buffer      # 30
+        self.n_init=3
+        self.nn_budget=args.min_box_area    # 100
+
         self.extractor = Extractor(reid)
+
+        max_cosine_distance = self.max_dist
+        self.metric = NearestNeighborDistanceMetric(
+            "cosine", max_cosine_distance, self.nn_budget)
+        self.tracker = Tracker(
+            self.metric, max_iou_distance=self.max_iou_distance, max_age=self.max_age, n_init=self.n_init)
 
     def update(self, output_results, img_info, img_size):
         self.frame_id += 1
@@ -204,6 +221,7 @@ class BYTETracker(object):
                 tracked_stracks.append(track)
 
         ''' Step 2: First association, with high score detection boxes'''
+        
         strack_pool = joint_stracks(tracked_stracks, self.lost_stracks)
         # Predict the current location with KF
         STrack.multi_predict(strack_pool)
@@ -221,8 +239,29 @@ class BYTETracker(object):
             else:
                 track.re_activate(det, self.frame_id, new_id=False)
                 refind_stracks.append(track)
+        
 
-        ''' Step 2: First association, with reid & high score detection boxes '''
+        ''' Custom Step 2: First association, with reid & high score detection boxes '''
+        # boxes = np.array([d.tlwh for d in detections])
+        # scores = np.array([d.confidence for d in detections])
+        '''
+        # update tracker
+        self.tracker.predict()
+        self.tracker.update(detections, np.zeros((len(detections), )))
+
+        # output bbox identities
+        outputs = []
+        for track in self.tracker.tracks:
+            if not track.is_confirmed() or track.time_since_update > 1:
+                continue
+            box = track.to_tlwh()
+            x1, y1, x2, y2 = self._tlwh_to_xyxy_noclip(box)
+            track_id = track.track_id
+            class_id = track.class_id
+            outputs.append(np.array([x1, y1, x2, y2, track_id, class_id], dtype=np.int))
+        if len(outputs) > 0:
+            outputs = np.stack(outputs, axis=0)
+        '''
 
         ''' Step 3: Second association, with low score detection boxes'''
         # association the untrack to the low score detections

@@ -12,6 +12,7 @@ from yolox.exp import get_exp
 from yolox.utils import fuse_model, get_model_info, postprocess
 from yolox.utils.visualize import plot_tracking
 from yolox.tracker.byte_tracker import BYTETracker
+from yolox.deepsort_tracker.deepsort import DeepSort
 from yolox.tracking_utils.timer import Timer
 
 import sys
@@ -59,7 +60,7 @@ def make_parser():
     parser.add_argument("--mot20", dest="mot20", default=False, action="store_true", help="test mot20.")
 
     # deepsort args
-    parser.add_argument("--deepsort_model", type=str, default="osnet_x_25", help="deepsort model")
+    parser.add_argument("--deepsort_model", type=str, default="osnet_x0_25", help="deepsort model")
     parser.add_argument("--deepsort_ckpt", type=str, default=None, help="deepsort finetuned checkpoint")
 
     return parser
@@ -306,7 +307,6 @@ def main(exp, args):
     reid = models.build_model(name=args.deepsort_model, num_classes=1000)
     if args.deepsort_ckpt : 
         utils.load_pretrained_weights(reid, args.model_path)
-    logger.info("Re-ID Model Summary: {}".format(get_model_info(reid)))
     reid.to(args.device)
     reid.eval()
 

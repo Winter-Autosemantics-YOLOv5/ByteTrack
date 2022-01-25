@@ -1,11 +1,14 @@
-
+# demo opts
+VIDEO_PATH=videos/2.mp4
+YOLOX_MODEL=exps/example/mot/yolox_x_mix_det.py
+YOLOX_CKPT=pretrained/bytetrack_x_mot17.pth.tar
 
 if [ $1 = "demo" ]
 then 
     echo "Tracking on mp4 file"
     python tools/demo_track.py \
     video \
-    --path videos/1.mp4\
+    --path videos/2.mp4 \
     -f exps/example/mot/yolox_x_mix_det.py \
     -c pretrained/bytetrack_x_mot17.pth.tar \
     --fp16 \
