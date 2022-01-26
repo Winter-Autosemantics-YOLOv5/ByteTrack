@@ -132,7 +132,7 @@ class Extractor(object):
         logger = logging.getLogger("root.tracker")
         logger.info("Loading weights from {}... Done!".format(model_path))
         
-        self.size = (64, 128)
+        self.size = (128, 256) # resize img size
         self.norm = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),

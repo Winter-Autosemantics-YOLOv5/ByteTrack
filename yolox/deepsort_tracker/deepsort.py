@@ -153,7 +153,20 @@ class NearestNeighborDistanceMetric(object):
 
 
 class DeepSort(object):
-    def __init__(self, model_name, model_path, max_dist=0.1, min_confidence=0.3, nms_max_overlap=1.0, max_iou_distance=0.7, max_age=30, n_init=3, nn_budget=100, use_cuda=True):
+    def __init__(
+        self, 
+        model_name='Net', 
+        model_path='pretrained/ckpt.t7', 
+        max_dist=0.1, 
+        min_confidence=0.3, 
+        nms_max_overlap=1.0,
+        max_iou_distance=0.7, 
+        max_age=30, 
+        n_init=3, 
+        nn_budget=100, 
+        use_cuda=True
+    ):
+
         self.min_confidence = min_confidence
         self.nms_max_overlap = nms_max_overlap
 
@@ -164,6 +177,17 @@ class DeepSort(object):
             "cosine", max_cosine_distance, nn_budget)
         self.tracker = Tracker(
             metric, max_iou_distance=max_iou_distance, max_age=max_age, n_init=n_init)
+
+        print(f'''DeepSort args: model_name={model_name}, 
+            model_path={model_path}, 
+            max_dist={max_dist}, 
+            min_confidence={min_confidence}, 
+            nms_max_overlap={nms_max_overlap}, 
+            max_age={max_age}, 
+            n_init={n_init}, 
+            nn_budget={nn_budget}, 
+            use_cuda={use_cuda}'''
+        )
 
     def update(self, output_results, img_info, img_size, img_file_name):
         img_file_name = os.path.join(get_yolox_datadir(), 'mot', 'train', img_file_name)
@@ -210,6 +234,53 @@ class DeepSort(object):
         if len(outputs) > 0:
             outputs = np.stack(outputs, axis=0)
         return outputs
+
+    def update_realtime(self, output_results, img_info, img_size, img_file_name):
+        img_file_name = os.path.join(get_yolox_datadir(), 'mot', 'train', img_file_name)
+        ori_img = cv2.imread(img_file_name)
+        self.height, self.width = ori_img.shape[:2]
+        # post process detections
+        output_results = output_results.cpu().numpy()
+        confidences = output_results[:, 4] * output_results[:, 5]
+        
+        bboxes = output_results[:, :4]  # x1y1x2y2
+        img_h, img_w = img_info[0], img_info[1]
+        scale = min(img_size[0] / float(img_h), img_size[1] / float(img_w))
+        bboxes /= scale
+        bbox_xyxy = bboxes
+        bbox_tlwh = self._xyxy_to_tlwh_array(bbox_xyxy)
+        remain_inds = confidences > self.min_confidence
+        bbox_tlwh = bbox_tlwh[remain_inds]
+        confidences = confidences[remain_inds]
+
+        # generate detections
+        features = self._get_features(bbox_tlwh, ori_img)
+        detections = [Detection(bbox_tlwh[i], conf, features[i]) for i, conf in enumerate(
+            confidences) if conf > self.min_confidence]
+        classes = np.zeros((len(detections), ))
+
+        # run on non-maximum supression
+        boxes = np.array([d.tlwh for d in detections])
+        scores = np.array([d.confidence for d in detections])
+
+        # update tracker
+        self.tracker.predict()
+        self.tracker.update(detections, classes)
+
+        # output bbox identities
+        outputs = []
+        for track in self.tracker.tracks:
+            if not track.is_confirmed() or track.time_since_update > 1:
+                continue
+            box = track.to_tlwh()
+            x1, y1, x2, y2 = self._tlwh_to_xyxy_noclip(box)
+            track_id = track.track_id
+            class_id = track.class_id
+            outputs.append(np.array([x1, y1, x2, y2, track_id, class_id], dtype=np.int))
+        if len(outputs) > 0:
+            outputs = np.stack(outputs, axis=0)
+        return outputs
+
 
     """
     TODO:
