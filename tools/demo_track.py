@@ -103,6 +103,17 @@ class Predictor(object):
         self.test_size = exp.test_size
         self.device = device
         self.fp16 = fp16
+
+        print(f'''Yolo Predictor Args:
+            self.num_classes={self.num_classes},
+            self.confthre={self.confthre},
+            self.nmsthre={self.nmsthre},
+            self.test_size={self.test_size},
+            self.device={self.device},
+            self.fp16={self.fp16}
+            '''
+            )
+
         if trt_file is not None:
             from torch2trt import TRTModule
 
@@ -140,7 +151,7 @@ class Predictor(object):
             if self.decoder is not None:
                 outputs = self.decoder(outputs, dtype=outputs.type())
             outputs = postprocess(
-                outputs, self.num_classes, self.confthre, self.nmsthre
+                outputs, self.num_classes, self.confthre, self.nmsthre, class_agnostic=True
             )
             #logger.info("Infer time: {:.4f}s".format(time.time() - t0))
         return outputs, img_info

@@ -9,13 +9,29 @@ DEEPSORT_MODEL=osnet_x0_25
 DEEPSORT_CKPT=pretrained/osnet_x0_25_market1501_74.4%.pth
 #DEEPSORT_CKPT=pretrained/osnet_x0_25_mars_76.0%.pth
 #DEEPSORT_CKPT=pretrained/osnet_x0_25_skku_88.2%.pth
-``
-if [ $1 = "demo" ]
+
+if [ $1 = "demo_custom" ]
+then
+    echo "Detecting on mp4 file"
+    python tools/demo_track.py \
+    video \
+    -n yolox-x \
+    -c pretrained/yolox_x_ckpt_0126.pth \
+    --path videos/5.mp4 \
+    --conf 0.1 \
+    --nms 0.7 \
+    --tsize 640 \
+    --track_thresh 0.0 \
+    --match_thresh 1.0 \
+    --save_result \
+    --device gpu
+
+elif [ $1 = "demo_track" ]
 then 
     echo "Tracking on mp4 file"
     python tools/demo_track.py \
     video \
-    --path videos/2.mp4 \
+    --path videos/1.mp4 \
     -f exps/example/mot/yolox_x_mix_det.py \
     -c pretrained/bytetrack_x_mot17.pth.tar \
     --fp16 \
