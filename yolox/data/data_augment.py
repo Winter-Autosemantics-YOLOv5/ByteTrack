@@ -186,7 +186,7 @@ def _mirror(image, boxes):
     return image, boxes
 
 
-def preproc(image, input_size, mean, std, swap=(2, 0, 1)):
+def preproc(image, input_size, mean, std, swap=(2, 0, 1), normalize=True):
     if len(image.shape) == 3:
         padded_img = np.ones((input_size[0], input_size[1], 3)) * 114.0
     else:
@@ -200,8 +200,9 @@ def preproc(image, input_size, mean, std, swap=(2, 0, 1)):
     ).astype(np.float32)
     padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
 
-    padded_img = padded_img[:, :, ::-1]
-    padded_img /= 255.0
+    if normalize:
+        padded_img = padded_img[:, :, ::-1]
+        padded_img /= 255.0
     if mean is not None:
         padded_img -= mean
     if std is not None:
@@ -288,7 +289,7 @@ class ValTransform:
         data
     """
 
-    def __init__(self, rgb_means=None, std=None, swap=(2, 0, 1), legacy=False):
+    def __init__(self, rgb_means=None, std=None, swap=(2, 0, 1), legacy=True):
         self.means = rgb_means
         self.swap = swap
         self.std = std
@@ -296,10 +297,10 @@ class ValTransform:
 
     # assume input is cv2 img for now
     def __call__(self, img, res, input_size):
-        img, _ = preproc(img, input_size, self.means, self.std, self.swap)
-        if self.legacy:
-            img = img[::-1, :, :].copy()
-            img /= 255.0
-            img -= np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
-            img /= np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
+        img, _ = preproc(img, input_size, self.means, self.std, self.swap, normalize=self.legacy)
+        #if self.legacy:
+        #    img = img[::-1, :, :].copy()
+        #    img /= 255.0
+        #    img -= np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
+        #    img /= np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
         return img, np.zeros((1, 5))

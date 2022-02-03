@@ -42,7 +42,8 @@ def make_parser():
     parser.add_argument("--fp16", dest="fp16", default=False, action="store_true", help="Adopting mix precision evaluating.",)
     parser.add_argument("--fuse", dest="fuse", default=False, action="store_true", help="Fuse conv and bn for testing.",)
     parser.add_argument("--trt", dest="trt", default=False, action="store_true", help="Using TensorRT model for testing.",)
-
+    parser.add_argument("--legacy", dest="legacy", default=False, action="store_true", help="To be compatible with older versions",)
+    
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
     parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
@@ -93,7 +94,8 @@ class Predictor(object):
         trt_file=None,
         decoder=None,
         device=torch.device("cpu"),
-        fp16=False
+        fp16=False,
+        legacy=True
     ):
         self.model = model
         self.decoder = decoder
@@ -103,7 +105,6 @@ class Predictor(object):
         self.test_size = exp.test_size
         self.device = device
         self.fp16 = fp16
-
         # default param
         # rgb_means = (0.485, 0.456, 0.406)
         # std = (0.229, 0.224, 0.225)
@@ -111,7 +112,7 @@ class Predictor(object):
         rgb_means = None
         std = None
 
-        self.preproc = ValTransform(rbg_means=rgb_means, std=std, swap=(2, 0, 1), legacy=True)
+        self.preproc = ValTransform(rgb_means=rgb_means, std=std, swap=(2, 0, 1), legacy=legacy)
 
         print(f'''Yolo Predictor Args:
             self.num_classes={self.num_classes},
@@ -348,7 +349,7 @@ def main(exp, args):
         trt_file = None
         decoder = None
 
-    predictor = Predictor(model, exp, trt_file, decoder, args.device, args.fp16)
+    predictor = Predictor(model, exp, trt_file, decoder, args.device, args.fp16, args.legacy)
     current_time = time.localtime()
     if args.demo == "image":
         image_demo(predictor, vis_folder, current_time, args)
