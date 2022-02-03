@@ -7,7 +7,7 @@ import torch
 
 from loguru import logger
 
-from yolox.data.data_augment import preproc
+from yolox.data.data_augment import ValTransform
 from yolox.exp import get_exp
 from yolox.utils import fuse_model, get_model_info, postprocess
 from yolox.utils.visualize import plot_tracking
@@ -104,6 +104,15 @@ class Predictor(object):
         self.device = device
         self.fp16 = fp16
 
+        # default param
+        # rgb_means = (0.485, 0.456, 0.406)
+        # std = (0.229, 0.224, 0.225)
+
+        rgb_means = None
+        std = None
+
+        self.preproc = ValTransform(rbg_means=rgb_means, std=std, swap=(2, 0, 1), legacy=True)
+
         print(f'''Yolo Predictor Args:
             self.num_classes={self.num_classes},
             self.confthre={self.confthre},
@@ -123,8 +132,7 @@ class Predictor(object):
             x = torch.ones((1, 3, exp.test_size[0], exp.test_size[1]), device=device)
             self.model(x)
             self.model = model_trt
-        self.rgb_means = (0.485, 0.456, 0.406)
-        self.std = (0.229, 0.224, 0.225)
+
 
     def inference(self, img, timer):
         img_info = {"id": 0}
@@ -139,7 +147,7 @@ class Predictor(object):
         img_info["width"] = width
         img_info["raw_img"] = img
 
-        img, ratio = preproc(img, self.test_size, self.rgb_means, self.std)
+        img, ratio = self.preproc(img, None, self.test_size)
         img_info["ratio"] = ratio
         img = torch.from_numpy(img).unsqueeze(0).float().to(self.device)
         if self.fp16:
