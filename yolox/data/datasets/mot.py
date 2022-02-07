@@ -98,6 +98,7 @@ class MOTDataset(Dataset):
         img_file = os.path.join(
             self.data_dir, self.name, file_name
         )
+        print('imgfile:',img_file)
         img = cv2.imread(img_file)
         assert img is not None
 
