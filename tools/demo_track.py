@@ -121,6 +121,7 @@ class Predictor(object):
             self.test_size={self.test_size},
             self.device={self.device},
             self.fp16={self.fp16}
+            legacy={legacy}
             '''
             )
 
