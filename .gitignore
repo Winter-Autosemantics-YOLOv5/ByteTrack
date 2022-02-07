@@ -142,6 +142,7 @@ docs/api
 events.out.tfevents*
 pretrained
 YOLOX_outputs
+YOLOv5_outputs
 
 # dataset
 datasets/
