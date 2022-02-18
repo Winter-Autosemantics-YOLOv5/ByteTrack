@@ -208,11 +208,17 @@ python3 tools/train.py -f exps/example/mot/your_exp_file.py -d 8 -b 48 --fp16 -o
 
 * **Evaluation on MOT17 half val**
 
-Run ByteTrack:
+Run ByteTrack with YoloX:
 
 ```shell
 cd <ByteTrack_HOME>
-python3 tools/track.py -f exps/example/mot/yolox_x_ablation.py -c pretrained/bytetrack_ablation.pth.tar -b 1 -d 1 --fp16 --fuse
+python3 tools/track.py \
+   -f exps/example/mot/yolox_x_ablation.py \
+   -c pretrained/bytetrack_ablation.pth.tar \
+   -b 1 \
+   -d 1 \
+   --fp16 \
+   --fuse
 ```
 You can get 76.6 MOTA using our pretrained model.
 
@@ -233,6 +239,18 @@ python3 tools/track.py -f exps/example/mot/yolox_x_mix_det.py -c pretrained/byte
 python3 tools/interpolation.py
 ```
 Submit the txt files to [MOTChallenge](https://motchallenge.net/) website and you can get 79+ MOTA (For 80+ MOTA, you need to carefully tune the test image size and high score detection threshold of each sequence).
+
+Run ByteTrack with Yolov5:
+ - download crowdhuman_yolov5m.pt [here](https://drive.google.com/u/0/uc?id=1gglIwqxaH2iTvy6lZlXuAcMpd_U0GCUb&export=download)
+
+```shell
+cd <ByteTrack_HOME>
+python tools/track_yolov5.py \
+   -f exps/example/mot/yolov5_m_mix_det.py \
+   -c pretrained/crowdhuman_yolov5m.pt \
+   -b 1 \
+   -d 1 \
+```
 
 * **Test on MOT20**
 
@@ -272,6 +290,8 @@ You can get the tracking results in each frame from 'online_targets'. You can re
 ```shell
 cd <ByteTrack_HOME>
 python3 tools/demo_track.py video -f exps/example/mot/yolox_x_mix_det.py -c pretrained/bytetrack_x_mot17.pth.tar --fp16 --fuse --save_result
+
+python3 tools/demo_track_yolov5.py video -f exps/example/mot/yolov5_m_mix_det.py -c pretrained/crowdhuman_yolov5m.pt --save_result
 ```
 
 ## Deploy
