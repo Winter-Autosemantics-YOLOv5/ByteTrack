@@ -359,6 +359,15 @@ def main(exp, args):
 
 
 if __name__ == "__main__":
+    '''
+    python tools/demo_track.py \
+        video \
+        -f exps/example/mot/yolox_x_ablation.py \
+        -c pretrained/bytetrack_ablation.pth.tar \
+        --path videos/6.mp4 \
+        --save_result \
+        --legacy 
+    '''
     args = make_parser().parse_args()
     exp = get_exp(args.exp_file, args.name)
 

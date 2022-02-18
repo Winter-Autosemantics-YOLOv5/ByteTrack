@@ -158,7 +158,7 @@ class DeepSort(object):
         model_name='Net', 
         model_path='pretrained/ckpt.t7', 
         max_dist=0.1, 
-        min_confidence=0.3, 
+        min_confidence=0.5, 
         nms_max_overlap=1.0,
         max_iou_distance=0.7, 
         max_age=30, 

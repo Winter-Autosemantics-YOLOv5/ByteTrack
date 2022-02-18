@@ -122,6 +122,7 @@ def main(exp, args, num_gpu):
     # detector model load
     ckpt_file = args.ckpt
     model = DetectMultiBackend(ckpt_file, device='cuda')
+    
 
     val_loader = exp.get_eval_loader(args.batch_size, is_distributed, args.test)
     evaluator = MOTEvaluator(
