@@ -39,11 +39,20 @@ Multi-object tracking (MOT) aims at estimating bounding boxes and identities of 
 ## Installation
 ### 1. Installing on the host machine
 Step1. Install ByteTrack.
-```shell
-git clone https://github.com/ifzhang/ByteTrack.git
-cd ByteTrack
+
+- install original version
+```bash
+git clone https://github.com/Winter-Autosemantics-YOLOv5/ByteTrack.git
 pip3 install -r requirements.txt
 python3 setup.py develop
+```
+
+- install yolov5 added version
+```bash
+git clone https://github.com/Winter-Autosemantics-YOLOv5/ByteTrack.git
+cd ByteTrack
+git checkout reid
+git submodule update --init
 ```
 
 Step2. Install [pycocotools](https://github.com/cocodataset/cocoapi).
@@ -207,6 +216,8 @@ python3 tools/train.py -f exps/example/mot/your_exp_file.py -d 8 -b 48 --fp16 -o
 ## Tracking
 
 * **Evaluation on MOT17 half val**
+
+- *If tracking is not work properly, then put '--legacy' parameter.*
 
 Run ByteTrack with YoloX:
 
